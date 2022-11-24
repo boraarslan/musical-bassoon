@@ -1,4 +1,4 @@
-use std::{sync::Arc, net::SocketAddr, str::FromStr};
+use std::{net::SocketAddr, str::FromStr, sync::Arc};
 
 use axum::{
     routing::{delete, get, post},
@@ -7,12 +7,14 @@ use axum::{
 use bb8_redis::RedisConnectionManager;
 use once_cell::sync::Lazy;
 use rest_task_scheduler::{
-    endpoints::{create_task, delete_task, show_task, show_all_tasks},
-    worker::{ScheduledTaskManager, Worker}, State,
+    endpoints::{create_task, delete_task, show_all_tasks, show_task},
+    worker::{ScheduledTaskManager, Worker},
+    State,
 };
 
 static REDIS_URL: Lazy<String> = Lazy::new(|| std::env::var("REDIS_URL").unwrap());
-static LISTEN_PORT: Lazy<String> = Lazy::new(|| std::env::var("LISTEN_PORT").unwrap_or("7272".to_string()));
+static LISTEN_PORT: Lazy<String> =
+    Lazy::new(|| std::env::var("LISTEN_PORT").unwrap_or("7272".to_string()));
 
 #[tokio::main]
 async fn main() {
@@ -25,7 +27,8 @@ async fn main() {
     tokio::spawn(async move { scheduled_task_manager.run().await });
 
     let state = Arc::new(State { db: pool });
-    let addr = SocketAddr::from_str(&format!("0.0.0.0:{}", LISTEN_PORT.parse::<u16>().unwrap())).unwrap();
+    let addr =
+        SocketAddr::from_str(&format!("0.0.0.0:{}", LISTEN_PORT.parse::<u16>().unwrap())).unwrap();
     println!("Listening on port: {}", addr.port());
 
     let app = Router::new()

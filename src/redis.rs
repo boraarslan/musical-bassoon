@@ -126,7 +126,10 @@ pub async fn remove_task(task_id: u64, db: &RedisPool) -> anyhow::Result<()> {
 pub async fn check_scheduled_tasks(db: &RedisPool) -> anyhow::Result<()> {
     let mut conn = db.get().await?;
     loop {
-        redis::cmd("WATCH").arg(SCHEDULED_KEY).query_async(&mut *conn).await?;
+        redis::cmd("WATCH")
+            .arg(SCHEDULED_KEY)
+            .query_async(&mut *conn)
+            .await?;
 
         let mut cmd = redis::Cmd::new();
         cmd.arg("ZRANGE").arg(SCHEDULED_KEY).arg(0).arg(0);
@@ -157,7 +160,6 @@ pub async fn check_scheduled_tasks(db: &RedisPool) -> anyhow::Result<()> {
                 .await?;
             redis::cmd("EXEC").query_async(&mut *conn).await?;
         }
-
 
         tokio::time::sleep(Duration::from_secs(1)).await;
     }

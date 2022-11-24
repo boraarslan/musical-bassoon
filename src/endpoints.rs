@@ -5,7 +5,7 @@ use serde_json::{json, Value};
 
 use crate::{
     handle_json_error,
-    redis::{fetch_all_tasks, fetch_task, insert_task_to_queue, schedule_task, remove_task},
+    redis::{fetch_all_tasks, fetch_task, insert_task_to_queue, remove_task, schedule_task},
     task::{CreateTaskRequest, DeleteTaskRequest, ShowTaskRequest, Task},
     AppError, State,
 };
@@ -29,9 +29,7 @@ pub async fn create_task(
     return Ok(Json(json!({ "task_id": task_id })));
 }
 
-pub async fn show_all_tasks(
-    state: Extension<Arc<State>>,
-) -> Result<Json<Value>, AppError> {
+pub async fn show_all_tasks(state: Extension<Arc<State>>) -> Result<Json<Value>, AppError> {
     let (queued, scheduled) = fetch_all_tasks(&state.db).await?;
 
     Ok(Json(json!({

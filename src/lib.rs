@@ -1,6 +1,7 @@
 use axum::{
+    extract::rejection::JsonRejection,
     response::{IntoResponse, Response},
-    Json, extract::rejection::JsonRejection,
+    Json,
 };
 use hyper::StatusCode;
 use serde_json::json;
@@ -46,7 +47,6 @@ where
         Self(Kind::Anyhow(err.into()))
     }
 }
-
 
 fn handle_json_error(error: JsonRejection) -> AppError {
     let message = match error {
