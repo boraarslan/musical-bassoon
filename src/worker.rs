@@ -1,22 +1,22 @@
 use std::time::Duration;
 
-use crate::{
-    redis::{check_scheduled_tasks, get_task_from_queue, RedisPool},
-    task::TaskType,
-};
+use sqlx::PgPool;
+
+use crate::database::{pull_task, queue_hanging_tasks, remove_task};
+use crate::task::TaskType;
 
 pub struct Worker {
-    db: RedisPool,
+    db: PgPool,
 }
 
 impl Worker {
-    pub fn new(db: &RedisPool) -> Self {
+    pub fn new(db: &PgPool) -> Self {
         Worker { db: db.clone() }
     }
 
     pub async fn run(&self) -> anyhow::Result<()> {
         loop {
-            let next_task = get_task_from_queue(&self.db).await?;
+            let next_task = pull_task(&self.db).await?;
 
             if next_task.is_none() {
                 tokio::time::sleep(Duration::from_secs(1)).await;
@@ -38,19 +38,25 @@ impl Worker {
                     println!("FizzBuzz {}", task.id)
                 }
             }
+
+            remove_task(task.id, &self.db).await?;
         }
     }
 }
 
-pub struct ScheduledTaskManager {
-    db: RedisPool,
+pub struct TaskGarbageCollector {
+    db: PgPool,
 }
 
-impl ScheduledTaskManager {
-    pub fn new(db: &RedisPool) -> Self {
-        ScheduledTaskManager { db: db.clone() }
+impl TaskGarbageCollector {
+    pub fn new(db: &PgPool) -> Self {
+        TaskGarbageCollector { db: db.clone() }
     }
+
     pub async fn run(&self) -> anyhow::Result<()> {
-        check_scheduled_tasks(&self.db).await
+        loop {
+            queue_hanging_tasks(&self.db).await?;
+            tokio::time::sleep(Duration::from_secs(10)).await;
+        }
     }
 }
